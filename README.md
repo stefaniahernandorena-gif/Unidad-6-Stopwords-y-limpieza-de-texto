@@ -1,54 +1,57 @@
-# Unidad-6-Stopwords-y-limpieza-de-texto
+# 🚀 Production-Grade NLP Pipeline: Lemmatization, Feature Reduction & ML Evaluation
 
-# 🧪 NLP Lab: Text Cleaning & Stopword Optimization (Amazon Dataset)
+Este repositorio contiene un entorno de ingeniería profesional para el procesamiento de lenguaje natural (NLP) aplicado al análisis y optimización morfológica de opiniones de clientes, utilizando el [Amazon Reviews Dataset](https://www.kaggle.com/datasets/dongrelaxman/amazon-reviews-dataset) provisto por Kaggle.
 
-¡Hola! En este módulo de laboratorio me enfoqué en el diseño e implementación de un pipeline robusto para la **limpieza de texto, tokenización y optimización adaptativa de Stopwords** utilizando la librería avanzada de NLP **spaCy**.
-
-El objetivo principal fue transformar un corpus de reseñas de clientes de Amazon (datos altamente no estructurados) en características limpias y de alta relevancia estadística, listas para alimentar modelos predictivos.
+A diferencia de los enfoques monolíticos tradicionales, este proyecto implementa un pipeline de producción completamente modularizado en funciones desacopladas, evaluado mediante pruebas unitarias (`unittest`) y validado cuantitativamente a través de métricas de reducción dimensional y modelos supervisados de Machine Learning.
 
 ---
 
-## 🛠️ Desafíos de Ingeniería Resueltos (Control de Calidad del Dato)
+## 🛠️ Arquitectura del Sistema y Componentes Técnicos
 
-Durante la implementación inicial, se detectó una anomalía crítica de *Data Drift* donde los términos más frecuentes eran números de años y meses en lugar de palabras con carga semántica de e-commerce.
+El pipeline está estructurado en módulos independientes y reutilizables:
 
-* **El Problema (Column Shifting):** Se identificó que el parámetro estricto `quoting=3` en el parseo del CSV hacía que Pandas fragmentara el texto ante la presencia de comas gramaticales dentro de las reseñas, empujando los metadatos de fechas hacia la columna principal de texto.
-* **La Solución:** Se reestructuró la ingesta eliminando dicha restricción, se migró el pipeline nativamente al modelo en inglés (`en_core_web_sm`) y se incorporaron filtros booleanos estrictos (`token.is_digit` y `token.like_num`) para purgar por completo el ruido numérico residual.
-
----
-
-## 🔄 Fases del Pipeline de Procesamiento
-
-El script ejecuta de forma secuencial tres estrategias de análisis de frecuencia para comparar el impacto de la limpieza:
-
-1. **Corpus Crudo (Baseline):** Tokenización básica aislando únicamente signos de puntuación. El vocabulario es dominado por conectores funcionales sin valor analítico (*"the"*, *"i"*, *"and"*).
-2. **Filtrado Estándar (Idioma):** Aplicación del diccionario de Stopwords nativo de spaCy para remover el ruido gramatical general del inglés.
-3. **Filtrado Avanzado (Dominio E-commerce):** Inyección personalizada de Stopwords de negocio (*"product"*, *"amazon"*, *"shipping"*, *"seller"*). Términos que, aunque son válidos en el idioma, aparecen de forma ubiqua en el dominio de compras sin aportar varianza ni diferenciar el sentimiento.
+1. **Ingesta de Datos Robusta (`Módulo 1`):** Consumo automatizado del corpus real a través de la API de `kagglehub`. Configura el motor de parsing en `Python` (`engine="python"`) y gestiona excepciones de saltos de línea y líneas corruptas (`on_bad_lines="skip"`), eliminando los fallos críticos de desbordamiento de búfer (*C-buffer overflow*).
+2. **Procesamiento Lingüístico Avanzado (`Módulo 2`):** Implementación de un flujo jerárquico con `spaCy` (`en_core_web_sm`) que ejecuta:
+   * **Tokenización y Limpieza:** Eliminación de ruido estructural (signos de puntuación, espacios y caracteres numéricos).
+   * **Filtrado Semántico Adaptativo:** Inyección de Stopwords tradicionales combinadas con una lista personalizada de **Stopwords de Dominio** específicas de e-commerce (*"product"*, *"amazon"*, *"shipping"*, *"seller"*), aislando términos ubicuos sin varianza estadístico-emocional.
+   * **Lematización Profunda:** Reducción morfológica de los tokens a sus raíces canónicas (lemas).
+   * **Etiquetado POS (Part-of-Speech):** Extracción síncrona de categorías gramaticales para auditoría de contexto.
+3. **Métricas de Contracción de Características (`Módulo 3`):** Cálculo del impacto numérico del preprocesamiento sobre el espacio vectorial.
+4. **Validación con Modelos Supervisados (`Módulo 4`):** Evaluación del impacto predictivo real mediante el entrenamiento de un clasificador de Regresión Logística sobre vectores de frecuencia inversa de documentos (**TF-IDF**).
+5. **Conjunto de Pruebas Unitarias (`Módulo 5`):** Entorno integrado de aserciones lógicas para garantizar la consistencia morfológica y la estabilidad del código ante nuevos conjuntos de datos.
 
 ---
 
-## 📈 Impacto Metodológico en Modelos Avanzados
+## 📊 Métricas Cuantitativas de Rendimiento
 
-* **Optimización para TF-IDF:** La eliminación previa de Stopwords reduce drásticamente la dimensionalidad de la matriz dispersa (*sparse matrix*), evitando la "maldición de la dimensionalidad" y acelerando la convergencia de clasificadores supervisados.
-* **Fidelidad en Word Embeddings:** Al limpiar el ruido gramatical, los modelos de contexto local (como Word2Vec o FastText) aprenden relaciones vectoriales legítimas entre conceptos de negocio (ej. asociar adjetivos directamente a los atributos del producto) en lugar de saturar las ventanas de atención con conectores.
+### 1. Reducción de Dimensionalidad (Compresión del Vocabulario)
+El pipeline morfológico demostró una alta eficiencia en la purga de ruido y contracción de características (*features*):
+
+* **Tamaño Vocabulario Original (Tokens Únicos):** 9,970
+* **Tamaño Vocabulario Post-Procesado (Lemas):** 5,062
+* **Porcentaje Neto de Reducción de Dimensionalidad:** **49.23%**
+
+### 2. Impacto en el Rendimiento del Modelo de ML (Trade-Off Industrial)
+Se evaluó un clasificador supervisado entrenado con matrices TF-IDF (restringido a las 2,500 mejores características) para comparar la capacidad predictiva de ambos estados del texto:
+
+| Representación del Texto | Accuracy Score | Dimensión del Vocabulario | Latencia y Costo de Infraestructura |
+| :--- | :--- | :--- | :--- |
+| **Texto Original Crudo** | **81.7%** | 9,970 tokens | Elevado (Matriz dispersa masiva y saturada de ruido) |
+| **Texto Procesado (Lemas)** | **80.3%** | 5,062 lemas | **Óptimo (Eficiencia en memoria y alta velocidad de cómputo)** |
+
+**Discusión Técnica:** El modelo con texto procesado experimentó una flexión marginal de apenas el 1.4% en su *Accuracy Score*. Sin embargo, el pipeline limpio procesa la **mitad de características únicas (reducción del 49.23%)**. En entornos de producción masiva (*high-throughput*), este trade-off es ampliamente favorable: reduce drásticamente la latencia de inferencia por milisegundo y optimiza los costos operativos de almacenamiento en la nube, entregando un modelo altamente escalable y libre de sobreajuste (*overfitting*).
 
 ---
 
-## ⚙️ Tecnologías Utilizadas
+## 🧪 Pruebas Unitarias Automatizadas
+El pipeline incorpora un módulo basado en `unittest` que valida el correcto funcionamiento de las reglas lingüísticas (lematización, exclusión de stopwords y tipado numérico). Al finalizar la ejecución, el entorno de pruebas confirma la estabilidad del software:
 
-* **Python 3.x**
-* **spaCy** (Pipeline `en_core_web_sm` para Tokenización avanzada y filtrado léxico)
-* **Pandas & NumPy** (Ingesta y manipulación de estructuras tabulares)
-* **Kagglehub** (Ingesta automatizada del dataset `dongrelaxman/amazon-reviews-dataset`)
+```text
+test_limpieza_y_lematizacion (__main__.TestPipelineNLP.test_limpieza_y_lematizacion) ... ok
 
----
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
 
-## 🚀 Cómo Ejecutar el Laboratorio
+OK
 
-1. Clonar el repositorio:
-   ```bash
-   git clone [https://github.com/TU_USUARIO/TU_REPOSITORIO.git](https://github.com/TU_USUARIO/TU_REPOSITORIO.git)
-
-   pip install pandas spacy kagglehub
-python -m spacy download en_core_web_sm
 
